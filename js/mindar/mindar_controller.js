@@ -164,7 +164,7 @@ class MindARController {
     }
 
     copyLights(scene, player) {
-        const appScene = player?.scene;
+        const appScene = player?.scene || player?.mainScene;
         if (!appScene) return;
 
         appScene.traverse((obj) => {
