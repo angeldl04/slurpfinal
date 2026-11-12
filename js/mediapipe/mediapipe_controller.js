@@ -96,7 +96,73 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
         </g>
     `;
     app.appendChild(vomitOverlay);
+
     const vomitShape = vomitOverlay.querySelector("#slurp-vomit-shape");
+
+    // Espiral SLURP: aparece sobre el ojo que se cierre y gira continuamente.
+    const spiralGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    spiralGroup.setAttribute("id", "slurp-eye-spiral");
+    spiralGroup.setAttribute("opacity", "0");
+    spiralGroup.innerHTML = `
+        <path d="M 50 8 C 78 5 96 27 91 53 C 87 78 62 94 38 85
+                 C 15 77 9 51 22 33 C 34 17 59 18 70 33
+                 C 81 48 72 67 57 71 C 43 75 31 64 35 51
+                 C 38 41 51 38 58 45 C 64 51 60 60 53 61"
+              fill="none" stroke="#101600" stroke-width="13"
+              stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M 50 8 C 78 5 96 27 91 53 C 87 78 62 94 38 85
+                 C 15 77 9 51 22 33 C 34 17 59 18 70 33
+                 C 81 48 72 67 57 71 C 43 75 31 64 35 51
+                 C 38 41 51 38 58 45 C 64 51 60 60 53 61"
+              fill="none" stroke="#aaff00" stroke-width="8"
+              stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M 18 12 L 22 2 L 27 12 L 37 16 L 27 20 L 22 30 L 18 20 L 8 16 Z"
+              fill="#d7ff35" stroke="#101600" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="88" cy="12" r="5" fill="#d7ff35" stroke="#101600" stroke-width="2"/>
+    `;
+    Object.assign(spiralGroup.style, {
+        transformBox: "fill-box",
+        transformOrigin: "center",
+        animation: "slurp-eye-spin 1.05s linear infinite"
+    });
+    const spiralStyle = document.createElementNS("http://www.w3.org/2000/svg", "style");
+    spiralStyle.textContent = "@keyframes slurp-eye-spin { to { transform: rotate(360deg); } }";
+    vomitOverlay.appendChild(spiralStyle);
+    vomitOverlay.appendChild(spiralGroup);
+
+    function updateSlurpSpiral(landmarks) {
+        const blinkLeft = tracker.getBlendShape("eyeBlinkLeft");
+        const blinkRight = tracker.getBlendShape("eyeBlinkRight");
+        const leftClosed = blinkLeft > 0.58 && blinkRight < 0.38;
+        const rightClosed = blinkRight > 0.58 && blinkLeft < 0.38;
+
+        if (!landmarks || (!leftClosed && !rightClosed)) {
+            spiralGroup.setAttribute("opacity", "0");
+            return;
+        }
+
+        // Centros aproximados de cada ojo a partir de sus esquinas.
+        const outer = leftClosed ? landmarks[362] : landmarks[33];
+        const inner = leftClosed ? landmarks[263] : landmarks[133];
+        if (!outer || !inner) {
+            spiralGroup.setAttribute("opacity", "0");
+            return;
+        }
+
+        const centerX = (outer.x + inner.x) * 0.5 * video.videoWidth;
+        const centerY = (outer.y + inner.y) * 0.5 * video.videoHeight;
+        const eyeWidth = Math.hypot(
+            (inner.x - outer.x) * video.videoWidth,
+            (inner.y - outer.y) * video.videoHeight
+        );
+        const size = Math.max(eyeWidth * 1.55, 42);
+
+        spiralGroup.setAttribute(
+            "transform",
+            `translate(${centerX - size / 2} ${centerY - size / 2}) scale(${size / 100})`
+        );
+        spiralGroup.setAttribute("opacity", "1");
+    }
 
     function updateSlurpVomit(landmarks) {
         const jawOpen = tracker.getMouthOpen();
@@ -157,6 +223,7 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
 
         const landmarks = tracker.getLandmarks();
         updateSlurpVomit(landmarks);
+        updateSlurpSpiral(landmarks);
 
         mpRenderer.drawMesh(landmarks);
         mpRenderer.drawPoints(landmarks);
