@@ -48,6 +48,95 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
     const faceRenderer = new ThreeFaceRenderer(video, player);
     faceRenderer.alignCamera();
 
+    // Efecto SLURP: chorrito de slime verde que sale de la boca al abrirla.
+    // Se dibuja en SVG sobre la cámara para seguir los landmarks en tiempo real.
+    const vomitOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    vomitOverlay.setAttribute("viewBox", `0 0 ${video.videoWidth || 1} ${video.videoHeight || 1}`);
+    vomitOverlay.setAttribute("preserveAspectRatio", "xMidYMid slice");
+    vomitOverlay.setAttribute("aria-hidden", "true");
+    Object.assign(vomitOverlay.style, {
+        position: "absolute",
+        inset: "0",
+        width: "100%",
+        height: "100%",
+        zIndex: "4",
+        pointerEvents: "none",
+        overflow: "visible",
+        transform: "scaleX(-1)",
+        opacity: "0",
+        transition: "opacity 90ms ease-out"
+    });
+
+    vomitOverlay.innerHTML = `
+        <defs>
+            <linearGradient id="slurpSlimeGradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#d7ff35"/>
+                <stop offset="48%" stop-color="#9be000"/>
+                <stop offset="100%" stop-color="#48b900"/>
+            </linearGradient>
+            <filter id="slurpSlimeShadow" x="-30%" y="-20%" width="160%" height="160%">
+                <feDropShadow dx="3" dy="5" stdDeviation="2" flood-color="#102000" flood-opacity=".45"/>
+            </filter>
+        </defs>
+        <g id="slurp-vomit-shape" opacity="0" filter="url(#slurpSlimeShadow)">
+            <path id="slurp-vomit-main"
+                d="M .08 0 C .18 .16 .18 .28 .30 .43 C .38 .55 .25 .72 .38 .91
+                   C .45 1.02 .58 .98 .62 .84 C .67 .69 .57 .58 .72 .43
+                   C .84 .29 .78 .16 .92 0 Z"
+                fill="url(#slurpSlimeGradient)" stroke="#101600" stroke-width=".045"
+                stroke-linejoin="round"/>
+            <path d="M .24 .18 C .34 .29 .31 .38 .40 .47"
+                fill="none" stroke="#efff9b" stroke-width=".055" stroke-linecap="round" opacity=".9"/>
+            <path d="M .70 .16 C .78 .25 .70 .31 .76 .36"
+                fill="none" stroke="#efff9b" stroke-width=".035" stroke-linecap="round" opacity=".8"/>
+            <circle cx=".16" cy=".55" r=".055" fill="#caff38" stroke="#101600" stroke-width=".025"/>
+            <circle cx=".84" cy=".69" r=".035" fill="#caff38" stroke="#101600" stroke-width=".02"/>
+            <path d="M .43 .99 C .39 1.13 .47 1.19 .51 1.08 C .56 1.19 .64 1.13 .59 .98"
+                fill="#79d000" stroke="#101600" stroke-width=".035" stroke-linejoin="round"/>
+        </g>
+    `;
+    app.appendChild(vomitOverlay);
+    const vomitShape = vomitOverlay.querySelector("#slurp-vomit-shape");
+
+    function updateSlurpVomit(landmarks) {
+        const jawOpen = tracker.getMouthOpen();
+        const upperLip = landmarks?.[13];
+        const lowerLip = landmarks?.[14];
+        const leftCorner = landmarks?.[61];
+        const rightCorner = landmarks?.[291];
+
+        if (!landmarks || !upperLip || !lowerLip || !leftCorner || !rightCorner || jawOpen < 0.38) {
+            vomitOverlay.style.opacity = "0";
+            vomitShape.setAttribute("opacity", "0");
+            return;
+        }
+
+        const width = Math.hypot(
+            (rightCorner.x - leftCorner.x) * video.videoWidth,
+            (rightCorner.y - leftCorner.y) * video.videoHeight
+        );
+        const mouthGap = Math.hypot(
+            (lowerLip.x - upperLip.x) * video.videoWidth,
+            (lowerLip.y - upperLip.y) * video.videoHeight
+        );
+        const centerX = (leftCorner.x + rightCorner.x) * 0.5 * video.videoWidth;
+        const mouthBottomY = Math.max(upperLip.y, lowerLip.y) * video.videoHeight;
+
+        // El efecto crece con la apertura de la mandíbula, sin dejar rastros.
+        const effectWidth = Math.max(width * 0.92, 18);
+        const effectHeight = Math.max(mouthGap * 2.8, width * 0.72);
+        const startY = mouthBottomY - effectHeight * 0.08;
+
+        vomitShape.setAttribute(
+            "transform",
+            `translate(${centerX - effectWidth / 2} ${startY}) scale(${effectWidth} ${effectHeight})`
+        );
+        vomitShape.setAttribute("opacity", String(Math.min(1, 0.72 + jawOpen * 0.5)));
+        vomitOverlay.setAttribute("viewBox", `0 0 ${video.videoWidth} ${video.videoHeight}`);
+        vomitOverlay.style.opacity = "1";
+    }
+
+
     // La mascara sale del grupo de la escena: se coloca vertice a vertice en la cara.
     // Sus hijos (si alguien los emparento en el editor) se quedan en la escena
     // para que sigan la cabeza como el resto de objetos.
@@ -67,6 +156,7 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
         faceEvents.update(tracker);
 
         const landmarks = tracker.getLandmarks();
+        updateSlurpVomit(landmarks);
 
         mpRenderer.drawMesh(landmarks);
         mpRenderer.drawPoints(landmarks);
