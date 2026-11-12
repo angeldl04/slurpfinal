@@ -84,7 +84,7 @@ export default class ThreePlayer {
         this.container.appendChild(this.renderer.domElement);
     }
 
-    async loadProject(url, onProgress) {
+    async loadProject(url, onProgress, options = {}) {
         return new Promise((resolve, reject) => {
             const fileLoader = new THREE.FileLoader();
             fileLoader.load(
@@ -93,6 +93,33 @@ export default class ThreePlayer {
                     try {
                         const json = JSON.parse(text);
                         const sceneJson = json.scene || json;
+                        let projectScripts = json.scripts || {};
+
+                        // Permite cargar solo una de las experiencias que están
+                        // organizadas como grupos dentro de la escena exportada.
+                        const rootObject = sceneJson.object || sceneJson;
+                        if (options.rootGroupName) {
+                            const selectedGroup = (rootObject.children || []).find(
+                                (child) => child.name === options.rootGroupName
+                            );
+
+                            if (!selectedGroup) {
+                                throw new Error(`No se encontró el grupo de escena "${options.rootGroupName}" en ${url}`);
+                            }
+
+                            const allowedUuids = new Set([rootObject.uuid]);
+                            const collectUuids = (object) => {
+                                if (object.uuid) allowedUuids.add(object.uuid);
+                                for (const child of object.children || []) collectUuids(child);
+                            };
+                            collectUuids(selectedGroup);
+
+                            rootObject.children = [selectedGroup];
+                            projectScripts = Object.fromEntries(
+                                Object.entries(projectScripts).filter(([uuid]) => allowedUuids.has(uuid))
+                            );
+                        }
+
                         const parsed = this.loader.parse(sceneJson);
 
                         this.stop();
@@ -109,7 +136,7 @@ export default class ThreePlayer {
                         this.mainScene.add(this.rootNode);
 
                         if (json.project) { this.applyProjectSettings(json.project); }
-                        this.loadScripts(json.scripts || {});
+                        this.loadScripts(projectScripts);
                         this.play();
 
                         resolve(this.rootNode);
