@@ -1,0 +1,220 @@
+body {
+    font-family: sans-serif;
+    font-size: 11px;
+    background-color: #000;
+    margin: 0px;
+}
+
+canvas {
+    display: block;
+}
+
+#ar-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    z-index: 1;
+}
+
+#ar-container video {
+    z-index: -2;
+}
+
+#log {
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 5px;
+    font-size: 12px;
+    max-height: 100px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+#overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #000;
+    color: #fff;
+    z-index: 2000;
+    transition: opacity 0.4s ease;
+}
+
+#overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#start-button {
+    padding: 14px 36px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #1976d2;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+}
+
+#start-button:active {
+    background-color: #145ea8;
+}
+
+#progress-container {
+    display: none;
+    width: 70%;
+    max-width: 320px;
+    flex-direction: column;
+    align-items: center;
+}
+
+#progress-bar-track {
+    width: 100%;
+    height: 8px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+#progress-bar-fill {
+    width: 0%;
+    height: 100%;
+    background-color: #1976d2;
+    transition: width 0.3s ease;
+}
+
+#progress-label {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #ccc;
+}
+
+/* ------------------------------------------------------------------
+   Identidad visual Slurp: botones y panel de información
+   (z-index entre #ar-container (1) y #overlay (2000))
+   Tipografía: Impact (con Anton como respaldo en Android)
+   ------------------------------------------------------------------ */
+
+:root {
+    --rosa: #F81390;
+    --turquesa: #02E4D7;
+    --azul: #018CFB;
+    --lima: #C5F608;
+    --negro: #0B0B0B;
+    --font-marca: Impact, 'Anton', 'Haettenschweiler', 'Arial Narrow Bold', sans-serif;
+}
+
+#ar-buttons {
+    position: fixed;
+    bottom: 28px;
+    left: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 10px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px 12px;
+    z-index: 100;
+    transition: opacity 0.3s ease;
+}
+
+.ar-btn {
+    font-family: var(--font-marca);
+    font-size: 18px;
+    font-weight: normal;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 12px 22px 10px;
+    border: 3px solid var(--negro);
+    border-radius: 999px;
+    box-shadow: 0 5px 0 var(--negro), inset 0 4px 0 rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.ar-btn:nth-child(1) { background-color: var(--rosa);     color: #fff;         transform: rotate(-3deg); }
+.ar-btn:nth-child(2) { background-color: var(--turquesa); color: var(--negro); transform: rotate(2deg); }
+.ar-btn:nth-child(3) { background-color: var(--lima);     color: var(--negro); transform: rotate(-2deg); }
+
+.ar-btn:active {
+    transform: translateY(4px) rotate(0deg);
+    box-shadow: 0 1px 0 var(--negro), inset 0 4px 0 rgba(255, 255, 255, 0.35);
+}
+
+#ar-buttons:not(.oculto) .ar-btn {
+    animation: pop 0.4s ease-out;
+}
+
+@keyframes pop {
+    from { scale: 0.5; opacity: 0; }
+    to   { scale: 1;   opacity: 1; }
+}
+
+#info-panel {
+    --c: var(--rosa);
+    position: fixed;
+    left: 5%;
+    bottom: 105px;
+    width: 90%;
+    max-height: 45vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding: 22px 20px 20px;
+    color: #fff;
+    background-color: rgba(11, 11, 11, 0.92);
+    border: 4px solid var(--c);
+    border-radius: 22px;
+    box-shadow: 0 6px 0 var(--negro);
+    z-index: 101;
+    transition: opacity 0.3s ease;
+}
+
+#info-panel h2 {
+    margin: 0 40px 10px 0;
+    font-family: var(--font-marca);
+    font-size: 28px;
+    font-weight: normal;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--c);
+}
+
+#info-panel p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+#info-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    font-family: var(--font-marca);
+    font-size: 16px;
+    color: var(--negro);
+    background-color: var(--c);
+    border: 3px solid var(--negro);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.oculto {
+    opacity: 0;
+    pointer-events: none;
+}

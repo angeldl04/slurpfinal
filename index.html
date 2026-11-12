@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <title>Experiencia SLURP AR</title>
+    <meta charset="utf-8">
+    <meta name="generator" content="Three.js Editor">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    
+    <!-- Tipografías de Google Fonts combinadas -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Titan+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/app.css">
+
+    <style>
+        /* ESTILOS DE MARCA SLURP PARA EL OVERLAY (Desde index1.html) */
+        #overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #aae019; /* Verde dominante de la marca */
+            background-image: radial-gradient(circle at center, #c8ff2b 0%, #95c714 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            font-family: 'Titan One', cursive; /* Tipografía gruesa y dinámica */
+            transition: opacity 0.4s ease;
+        }
+
+        #overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Contenedor del logo para la pantalla de carga */
+        #brand-logo {
+            max-width: 280px;
+            margin-bottom: 40px;
+            filter: drop-shadow(5px 5px 0px rgba(0,0,0,0.8));
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Botón estilo cómic/exagerado */
+        #start-button {
+            background-color: #ff1493; /* Rosa/Fucsia para destacar */
+            color: #ffffff;
+            font-family: 'Titan One', cursive;
+            font-size: 26px;
+            padding: 15px 50px;
+            border: 4px solid #000000;
+            border-radius: 40px; /* Formas curvas */
+            cursor: pointer;
+            box-shadow: 6px 6px 0px #000000;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.1s ease;
+        }
+
+        #start-button:active {
+            transform: translate(4px, 4px);
+            box-shadow: 2px 2px 0px #000000;
+        }
+
+        #progress-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 30px;
+            width: 80%;
+            max-width: 350px;
+        }
+
+        #progress-bar-track {
+            width: 100%;
+            height: 30px;
+            background-color: #2b82d9; /* Azul de los detalles del empaque */
+            border: 4px solid #000000;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: inset 0px 4px 0px rgba(0,0,0,0.2);
+        }
+
+        #progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background-color: #ff1493; /* Rosa de la marca */
+            transition: width 0.3s ease;
+            box-shadow: inset 0px 4px 0px rgba(255,255,255,0.3);
+        }
+
+        #progress-label {
+            margin-top: 15px;
+            color: #000000;
+            font-size: 20px;
+            text-shadow: 2px 2px 0px #ffffff; /* Contraste llamativo */
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+    </style>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "./js/three.compat.js",
+            "three/addons/": "./js/addons/",
+            "mindar-image-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/loaders/GLTFLoader.js';
+        window.ThreeGLTFLoader = GLTFLoader;
+    </script>
+</head>
+
+<body ontouchstart="">
+
+    <div id="ar-container"></div>
+
+    <!-- Botones de información: aparecen cuando la cámara detecta el marcador (Desde index.html) -->
+    <div id="ar-buttons" class="oculto">
+        <button class="ar-btn" data-info="conocenos" data-color="#F81390">Conócenos</button>
+        <button class="ar-btn" data-info="diversion" data-color="#02E4D7">Más Diversión</button>
+        <button class="ar-btn" data-info="arriesgate" data-color="#C5F608">Arriésgate</button>
+    </div>
+
+    <!-- Panel de información (Desde index.html) -->
+    <div id="info-panel" class="oculto">
+        <button id="info-close" aria-label="Cerrar">✕</button>
+        <h2 id="info-title"></h2>
+        <p id="info-text"></p>
+    </div>
+
+    <div class="log" id="log" style="display:none;"></div> <!-- Oculto para mantener interfaz limpia -->
+
+    <!-- Overlay combinado con logo y botón estilizado (Desde index1.html) -->
+    <div id="overlay">
+        <img id="brand-logo" src="assets/Logotipo burbuja brillante SLWIP.png" alt="SLURP Logo">
+        
+        <button id="start-button">¡Destapar!</button>
+        
+        <div id="progress-container">
+            <div id="progress-bar-track">
+                <div id="progress-bar-fill"></div>
+            </div>
+            <div id="progress-label">Sirviendo... 0%</div>
+        </div>
+    </div>
+
+    <script type="module">
+
+        import * as THREE from './js/three.module.js';
+        import { APP } from './js/app.js';
+        import { MindARController } from './js/mindar/mindar_controller.js';
+
+        window.THREE = THREE;
+
+        const log = document.getElementById('log');
+        const overlay = document.getElementById('overlay');
+        const startButton = document.getElementById('start-button');
+        const arContainer = document.getElementById('ar-container');
+        const progressContainer = document.getElementById('progress-container');
+        const progressFill = document.getElementById('progress-bar-fill');
+        const progressLabel = document.getElementById('progress-label');
+
+        const debugMode = new URLSearchParams(location.search).get('debug') === '1';
+        if (!debugMode) log.style.display = 'none';
+
+        // ------------------------------------------------------------------
+        // Contenido de los botones de información (Desde index.html)
+        // ------------------------------------------------------------------
+        const MARCA = 'Slurp';
+
+        const INFO = {
+            conocenos: {
+                titulo: 'Conócenos',
+                texto: `${MARCA} nació en una galaxia muy, muy lejana con una misión: que ninguna fiesta vuelva a ser aburrida. Es la bebida burbujeante y de colores brillantes que mezcla sabores de otro mundo con una dosis extra de diversión. Su receta es un secreto cósmico, pero su efecto es universal: donde hay ${MARCA}, hay fiesta.`
+            },
+            diversion: {
+                titulo: 'Más Diversión',
+                texto: `La familia ${MARCA} se expande por el universo: Nebulosa, con frutos rojos y destellos brillantes; Supernova, un cítrico explosivo con burbujas extra; Agujero Negro, de sabor oscuro e intenso que atrapa a cualquiera; Andrómeda, una mezcla tropical en lata edición galáctica; y Saturno, de uva con "anillos" de gelatina comestible. ¡Elige tu órbita favorita!`
+            },
+            arriesgate: {
+                titulo: 'Arriésgate',
+                texto: `Prepárate para despegar: diversión extrema, cero cansancio y energía infinita. Con cada sorbo sentirás que la fiesta apenas comienza, que la música no se detiene y que tu batería social nunca se agota. ¿Te atreves a probarlo?`
+            }
+        };
+
+        const arButtons = document.getElementById('ar-buttons');
+        const infoPanel = document.getElementById('info-panel');
+        const infoTitle = document.getElementById('info-title');
+        const infoText = document.getElementById('info-text');
+
+        document.querySelectorAll('.ar-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const data = INFO[btn.dataset.info];
+                infoTitle.textContent = data.titulo;
+                infoText.textContent = data.texto;
+                infoPanel.style.setProperty('--c', btn.dataset.color);
+                infoPanel.classList.remove('oculto');
+            });
+        });
+
+        document.getElementById('info-close').addEventListener('click', () => {
+            infoPanel.classList.add('oculto');
+        });
+
+        // ------------------------------------------------------------------
+
+        let player = null;
+        let mindarController = null;
+        let loaded = false;
+        let loadPromise = null;
+
+        function setProgress(percent, text) {
+            progressFill.style.width = `${percent}%`;
+            progressLabel.textContent = `${text} ${percent}%`;
+        }
+
+        async function loadEverything() {
+            if (loadPromise) return loadPromise;
+
+            loadPromise = (async () => {
+                // Microcopy adaptado a la marca (Desde index1.html)
+                setProgress(0, 'Sirviendo SLURP...');
+
+                const text = await new Promise((resolve, reject) => {
+                    const loader = new THREE.FileLoader();
+                    loader.load(
+                        'app.json',
+                        (t) => resolve(t),
+                        (e) => {
+                            if (e.lengthComputable) {
+                                const p = Math.round((e.loaded / e.total) * 25);
+                                setProgress(p, 'Sirviendo SLURP...');
+                            }
+                        },
+                        (err) => reject(new Error(err.statusText || 'No se pudo descargar el json'))
+                    );
+                });
+
+                player = new APP.Player({ alpha: true });
+                await player.load(JSON.parse(text));
+                player.setSize(window.innerWidth, window.innerHeight);
+                player.play();
+                setProgress(55, 'Bebida lista...');
+
+                document.body.appendChild(player.dom);
+
+                window.addEventListener('resize', function () {
+                    player.setSize(window.innerWidth, window.innerHeight);
+                });
+
+                window.player = player;
+
+                setProgress(85, 'Activando visión intergaláctica...');
+                log.textContent = 'initializing...';
+
+                await new Promise((resolve) => setTimeout(resolve, 10));
+
+                setProgress(100, '¡Altamente Adictivo!');
+                loaded = true;
+
+                console.log(window.player);
+
+            })().catch((e) => {
+                loaded = false;
+                loadPromise = null;
+                throw e;
+            });
+
+            return loadPromise;
+        }
+
+        startButton.addEventListener('click', async () => {
+            startButton.style.display = 'none'; // Oculta el botón al hacer clic
+            progressContainer.style.display = 'flex';
+
+            try {
+                await loadEverything();
+                if (!loaded) return;
+
+                setProgress(90, 'Iniciando cámara...');
+
+                mindarController = new MindARController(arContainer, player, debugMode);
+                window.mindarController = mindarController;
+
+                // Lógica combinada: Los botones de info aparecen al reconocer marcador (Desde index.html)
+                mindarController.addListener('found', () => {
+                    arButtons.classList.remove('oculto');
+                });
+
+                mindarController.addListener('lost', () => {
+                    arButtons.classList.add('oculto');
+                    infoPanel.classList.add('oculto');
+                });
+
+                await mindarController.start();
+
+                if (player?.dom) player.dom.style.display = 'none';
+
+                overlay.classList.add('hidden');
+                setTimeout(() => overlay.remove(), 400);
+            } catch (e) {
+                console.error('Error durante la carga:', e);
+                startButton.style.display = 'block'; 
+                startButton.textContent = '¡Reintentar!';
+                setProgress(0, 'Error al iniciar');
+            }
+        });
+
+        loadEverything().catch((e) => {
+            console.error('Error durante la carga automática:', e.message);
+            startButton.style.display = 'none';
+            progressContainer.style.display = 'flex';
+            setProgress(0, 'Error al cargar');
+            startButton.textContent = '¡Reintentar!';
+            startButton.style.display = 'block';
+        });
+
+    </script>
+</body>
+</html>
