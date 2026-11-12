@@ -25,3 +25,62 @@ body {
     object-fit: cover;
     transform: scaleX(-1);
 }
+
+
+/* Experiencia de filtro facial SLURP */
+.face-experience {
+    position: fixed;
+    inset: 0;
+    display: none;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    z-index: 1;
+}
+
+.face-experience.active {
+    display: block;
+}
+
+#face-experience #app {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+}
+
+#face-experience #video-renderer,
+#face-experience #canvas-renderer,
+#face-experience #app canvas:not(#canvas-renderer) {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#face-experience #video-renderer {
+    z-index: 0;
+}
+
+#face-experience #canvas-renderer {
+    z-index: 1;
+    pointer-events: none;
+}
+
+#face-experience #app canvas:not(#canvas-renderer) {
+    z-index: 2;
+    pointer-events: none;
+}
+
+@media (max-width: 600px) {
+    #face-experience #video-renderer,
+    #face-experience #canvas-renderer,
+    #face-experience #app canvas:not(#canvas-renderer) {
+        object-fit: cover;
+    }
+}
