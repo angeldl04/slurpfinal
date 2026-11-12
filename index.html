@@ -146,7 +146,25 @@
     <div id="overlay">
         <img id="brand-logo" src="assets/Logotipo burbuja brillante SLWIP.png" alt="SLURP Logo">
         
-        <button id="start-button">¡Destapar!</button>
+        <div id="mode-selection">
+            <h1 id="mode-title">ELIGE TU EXPERIENCIA</h1>
+            <p id="mode-subtitle">¿A qué universo quieres entrar?</p>
+            <div class="mode-options">
+                <button class="mode-button mode-face" id="face-mode-button" type="button">
+                    <span class="mode-number">01</span>
+                    <span class="mode-name">FILTRO FACIAL</span>
+                    <span class="mode-description">Interactúa con tu rostro</span>
+                    <span class="mode-arrow">➜</span>
+                </button>
+                <button class="mode-button mode-image" id="image-mode-button" type="button">
+                    <span class="mode-number">02</span>
+                    <span class="mode-name">SEGUIMIENTO DE IMAGEN</span>
+                    <span class="mode-description">Descubre la experiencia SLURP</span>
+                    <span class="mode-arrow">➜</span>
+                </button>
+            </div>
+            <p id="mode-message" role="status" aria-live="polite"></p>
+        </div>
         
         <div id="progress-container">
             <div id="progress-bar-track">
@@ -166,7 +184,10 @@
 
         const log = document.getElementById('log');
         const overlay = document.getElementById('overlay');
-        const startButton = document.getElementById('start-button');
+        const faceModeButton = document.getElementById('face-mode-button');
+        const imageModeButton = document.getElementById('image-mode-button');
+        const modeSelection = document.getElementById('mode-selection');
+        const modeMessage = document.getElementById('mode-message');
         const arContainer = document.getElementById('ar-container');
         const progressContainer = document.getElementById('progress-container');
         const progressFill = document.getElementById('progress-bar-fill');
@@ -281,8 +302,8 @@
             return loadPromise;
         }
 
-        startButton.addEventListener('click', async () => {
-            startButton.style.display = 'none'; // Oculta el botón al hacer clic
+        async function startImageExperience() {
+            modeSelection.style.display = 'none';
             progressContainer.style.display = 'flex';
 
             try {
@@ -294,7 +315,6 @@
                 mindarController = new MindARController(arContainer, player, debugMode);
                 window.mindarController = mindarController;
 
-                // Lógica combinada: Los botones de info aparecen al reconocer marcador (Desde index.html)
                 mindarController.addListener('found', () => {
                     arButtons.classList.remove('oculto');
                 });
@@ -312,10 +332,17 @@
                 setTimeout(() => overlay.remove(), 400);
             } catch (e) {
                 console.error('Error durante la carga:', e);
-                startButton.style.display = 'block'; 
-                startButton.textContent = '¡Reintentar!';
+                modeSelection.style.display = 'flex';
+                progressContainer.style.display = 'none';
+                modeMessage.textContent = 'No pudimos iniciar la experiencia. Inténtalo de nuevo.';
                 setProgress(0, 'Error al iniciar');
             }
+        }
+
+        imageModeButton.addEventListener('click', startImageExperience);
+
+        faceModeButton.addEventListener('click', () => {
+            modeMessage.textContent = 'El escenario del filtro facial está dentro de app.json, pero este proyecto todavía no tiene conectado el controlador de seguimiento del rostro. No queremos abrir una cámara sin que el filtro funcione correctamente.';
         });
 
         loadEverything().catch((e) => {
