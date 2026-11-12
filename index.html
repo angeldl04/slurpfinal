@@ -261,49 +261,28 @@
             if (loadPromise) return loadPromise;
 
             loadPromise = (async () => {
-                // Microcopy adaptado a la marca (Desde index1.html)
                 setProgress(0, 'Sirviendo SLURP...');
 
-                const text = await new Promise((resolve, reject) => {
-                    const loader = new THREE.FileLoader();
-                    loader.load(
-                        'app.json',
-                        (t) => resolve(t),
-                        (e) => {
-                            if (e.lengthComputable) {
-                                const p = Math.round((e.loaded / e.total) * 25);
-                                setProgress(p, 'Sirviendo SLURP...');
-                            }
-                        },
-                        (err) => reject(new Error(err.statusText || 'No se pudo descargar el json'))
-                    );
+                // La escena se descarga una sola vez y se interpreta con el
+                // mismo ThreePlayer que usa el controlador de seguimiento.
+                player = new ThreePlayer(arContainer);
+                await player.loadProject('app.json', ({ progress }) => {
+                    const percent = Math.round(progress * 70);
+                    setProgress(percent, 'Sirviendo SLURP...');
                 });
 
-                player = new ThreePlayer(arContainer);
-                await player.loadProject('app.json');
                 player.resize();
-                setProgress(55, 'Bebida lista...');
+                setProgress(100, '¡Experiencia lista!');
+                loaded = true;
+                window.player = player;
 
                 window.addEventListener('resize', () => {
                     if (player) player.resize();
                 });
-
-                window.player = player;
-
-                setProgress(85, 'Activando visión intergaláctica...');
-                log.textContent = 'initializing...';
-
-                await new Promise((resolve) => setTimeout(resolve, 10));
-
-                setProgress(100, '¡Altamente Adictivo!');
-                loaded = true;
-
-                console.log(window.player);
-
-            })().catch((e) => {
+            })().catch((error) => {
                 loaded = false;
                 loadPromise = null;
-                throw e;
+                throw error;
             });
 
             return loadPromise;
