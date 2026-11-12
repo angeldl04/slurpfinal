@@ -269,6 +269,9 @@
                 await player.loadProject('app.json', ({ progress }) => {
                     const percent = Math.round(progress * 70);
                     setProgress(percent, 'Sirviendo SLURP...');
+                }, {
+                    // La experiencia de seguimiento carga únicamente su grupo.
+                    rootGroupName: '02 - Experiencia ImageTarget'
                 });
 
                 player.resize();
@@ -342,7 +345,7 @@
                 // El controlador facial carga app.json por su cuenta y ejecuta
                 // los scripts de la escena con los eventos de MediaPipe.
                 setProgress(35, 'Activando reconocimiento facial...');
-                faceFilter = await startFaceFilter('app.json', { showGui: false });
+                faceFilter = await startFaceFilter('face-scene.json', { showGui: false });
 
                 setProgress(100, '¡Filtro listo!');
                 overlay.classList.add('hidden');
