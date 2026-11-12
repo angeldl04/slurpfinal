@@ -218,3 +218,104 @@ canvas {
     opacity: 0;
     pointer-events: none;
 }
+
+
+/* Selector de experiencias SLURP */
+#mode-selection {
+    width: min(88%, 560px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-top: 4px;
+}
+#mode-title {
+    margin: 0;
+    color: #0b0b0b;
+    font-family: 'Titan One', Impact, sans-serif;
+    font-size: clamp(25px, 6vw, 39px);
+    line-height: 1.05;
+    letter-spacing: 1px;
+    text-shadow: 2px 2px 0 #fff;
+}
+#mode-subtitle {
+    margin: 12px 0 26px;
+    color: #101010;
+    font-family: 'Anton', Impact, sans-serif;
+    font-size: 17px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.mode-options {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 18px;
+}
+.mode-button {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    min-height: 112px;
+    padding: 18px 56px 16px 22px;
+    border: 4px solid #0b0b0b;
+    border-radius: 25px;
+    box-shadow: 7px 7px 0 #0b0b0b;
+    color: #0b0b0b;
+    cursor: pointer;
+    text-align: left;
+    font-family: 'Anton', Impact, sans-serif;
+    transition: transform .12s ease, box-shadow .12s ease;
+}
+.mode-face { background: #F81390; color: #fff; transform: rotate(-1deg); }
+.mode-image { background: #02E4D7; transform: rotate(1deg); }
+.mode-button:active {
+    transform: translate(4px, 4px) rotate(0);
+    box-shadow: 3px 3px 0 #0b0b0b;
+}
+.mode-number {
+    font-family: 'Titan One', Impact, sans-serif;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    opacity: .85;
+}
+.mode-name {
+    margin-top: 3px;
+    font-size: clamp(20px, 5vw, 27px);
+    letter-spacing: 1px;
+    line-height: 1.05;
+}
+.mode-description {
+    margin-top: 5px;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .2px;
+}
+.mode-arrow {
+    position: absolute;
+    right: 19px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: Arial, sans-serif;
+    font-size: 34px;
+    line-height: 1;
+    text-shadow: 2px 2px 0 rgba(0,0,0,.2);
+}
+#mode-message {
+    min-height: 0;
+    margin: 18px 0 0;
+    max-width: 480px;
+    color: #101010;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.45;
+}
+@media (max-width: 420px) {
+    #brand-logo { max-width: 220px; margin-bottom: 25px; }
+    #mode-subtitle { margin-bottom: 20px; }
+    .mode-button { min-height: 104px; padding-left: 17px; }
+}
