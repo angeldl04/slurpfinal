@@ -126,6 +126,14 @@
 
     <div id="ar-container"></div>
 
+    <!-- Experiencia de filtro facial: video, ayudas 2D y escena Three.js --> 
+    <div id="face-experience" class="face-experience" aria-label="Filtro facial SLURP">
+        <div id="app">
+            <video id="video-renderer" autoplay playsinline muted></video>
+            <canvas id="canvas-renderer"></canvas>
+        </div>
+    </div>
+
     <!-- Botones de información: aparecen cuando la cámara detecta el marcador (Desde index.html) -->
     <div id="ar-buttons" class="oculto">
         <button class="ar-btn" data-info="conocenos" data-color="#F81390">Conócenos</button>
@@ -177,7 +185,8 @@
     <script type="module">
 
         import * as THREE from './js/three.module.js';
-        import { APP } from './js/app.js';
+        import ThreePlayer from './js/app.js';
+        import { startFaceFilter } from './js/mediapipe/mediapipe_controller.js';
         import { MindARController } from './js/mindar/mindar_controller.js';
 
         window.THREE = THREE;
@@ -189,6 +198,7 @@
         const modeSelection = document.getElementById('mode-selection');
         const modeMessage = document.getElementById('mode-message');
         const arContainer = document.getElementById('ar-container');
+        const faceExperience = document.getElementById('face-experience');
         const progressContainer = document.getElementById('progress-container');
         const progressFill = document.getElementById('progress-bar-fill');
         const progressLabel = document.getElementById('progress-label');
@@ -269,16 +279,13 @@
                     );
                 });
 
-                player = new APP.Player({ alpha: true });
-                await player.load(JSON.parse(text));
-                player.setSize(window.innerWidth, window.innerHeight);
-                player.play();
+                player = new ThreePlayer(arContainer);
+                await player.loadProject('app.json');
+                player.resize();
                 setProgress(55, 'Bebida lista...');
 
-                document.body.appendChild(player.dom);
-
-                window.addEventListener('resize', function () {
-                    player.setSize(window.innerWidth, window.innerHeight);
+                window.addEventListener('resize', () => {
+                    if (player) player.resize();
                 });
 
                 window.player = player;
@@ -326,7 +333,7 @@
 
                 await mindarController.start();
 
-                if (player?.dom) player.dom.style.display = 'none';
+                if (player?.renderer?.domElement) player.renderer.domElement.style.display = 'none';
 
                 overlay.classList.add('hidden');
                 setTimeout(() => overlay.remove(), 400);
@@ -341,17 +348,38 @@
 
         imageModeButton.addEventListener('click', startImageExperience);
 
-        faceModeButton.addEventListener('click', () => {
-            modeMessage.textContent = 'El escenario del filtro facial está dentro de app.json, pero este proyecto todavía no tiene conectado el controlador de seguimiento del rostro. No queremos abrir una cámara sin que el filtro funcione correctamente.';
-        });
+        let faceFilter = null;
+        let faceStarting = false;
 
-        loadEverything().catch((e) => {
-            console.error('Error durante la carga automática:', e.message);
-            modeSelection.style.display = 'flex';
-            progressContainer.style.display = 'none';
-            modeMessage.textContent = 'No pudimos cargar la experiencia. Recarga la página e inténtalo de nuevo.';
-            setProgress(0, 'Error al cargar');
-        });
+        async function startFaceExperience() {
+            if (faceStarting || faceFilter) return;
+            faceStarting = true;
+            modeSelection.style.display = 'none';
+            progressContainer.style.display = 'flex';
+            faceExperience.classList.add('active');
+            setProgress(10, 'Preparando cámara...');
+
+            try {
+                // El controlador facial carga app.json por su cuenta y ejecuta
+                // los scripts de la escena con los eventos de MediaPipe.
+                setProgress(35, 'Activando reconocimiento facial...');
+                faceFilter = await startFaceFilter('app.json', { showGui: false });
+
+                setProgress(100, '¡Filtro listo!');
+                overlay.classList.add('hidden');
+                setTimeout(() => overlay.remove(), 400);
+            } catch (error) {
+                console.error('Error al iniciar el filtro facial:', error);
+                faceExperience.classList.remove('active');
+                modeSelection.style.display = 'flex';
+                progressContainer.style.display = 'none';
+                modeMessage.textContent = 'No pudimos iniciar el filtro facial. Verifica los permisos de cámara e inténtalo de nuevo.';
+                setProgress(0, 'Error al iniciar');
+                faceStarting = false;
+            }
+        }
+
+        faceModeButton.addEventListener('click', startFaceExperience);
 
     </script>
 </body>
