@@ -123,6 +123,9 @@ class MindARController {
         }
 
         renderer.setAnimationLoop(() => {
+            // Mantiene vivos los scripts exportados desde Three.js Editor
+            // (incluidos los callbacks de los ImageTarget) mientras MindAR renderiza.
+            this.threePlayer?.update?.();
             this.dispatch('update', {});
             renderer.render(scene, camera);
         });
@@ -146,7 +149,7 @@ class MindARController {
     }
 
     copyEnvironment(scene, player) {
-        const appScene = player?.scene;
+        const appScene = player?.scene || player?.mainScene;
         if (!appScene) return;
 
         if (appScene.environment) {
