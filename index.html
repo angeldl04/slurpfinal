@@ -347,11 +347,10 @@
 
         loadEverything().catch((e) => {
             console.error('Error durante la carga automática:', e.message);
-            startButton.style.display = 'none';
-            progressContainer.style.display = 'flex';
+            modeSelection.style.display = 'flex';
+            progressContainer.style.display = 'none';
+            modeMessage.textContent = 'No pudimos cargar la experiencia. Recarga la página e inténtalo de nuevo.';
             setProgress(0, 'Error al cargar');
-            startButton.textContent = '¡Reintentar!';
-            startButton.style.display = 'block';
         });
 
     </script>
