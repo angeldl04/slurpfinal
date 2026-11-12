@@ -2,11 +2,11 @@
 //
 // Uso en una pagina HTML:
 //   import { startFaceFilter } from "./js/mediapipe/mediapipe_controller.js";
-//   startFaceFilter("app.json");
+//   startFaceFilter("face-scene.json");
 //
 // Como se usa la escena:
 //   - El objeto llamado "mesh_0" es la mascara: se deforma con la cara.
-//   - Todo lo demas (gafas, esferas, luces, ...) sigue la posicion, el giro y el
+//   - Todo lo demas (gafas, accesorios, luces, ...) sigue la posicion, el giro y el
 //     tamaño de la cabeza (ver js/mediapipe/face_mask.js para las unidades).
 //   - Los scripts de la escena reciben los eventos faciales (ver js/app.js).
 
