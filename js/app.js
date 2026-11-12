@@ -1,4 +1,4 @@
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.181.1/build/three.module.js";
+import * as THREE from "three";
 import { FACE_EVENT_TYPES } from "./mediapipe/face_events.js";
 window.THREE = THREE;
 
@@ -26,6 +26,8 @@ export default class ThreePlayer {
         this.rootNode = null;
         this.mainScene = null;
         this.instanceScene = null;
+        // Registro disponible antes de ejecutar los scripts exportados del editor.
+        this.imageTargets = [];
 
         // Estado facial (FaceEvents) disponible en los scripts como `face`.
         this.face = null;
@@ -137,6 +139,10 @@ export default class ThreePlayer {
 
                         if (json.project) { this.applyProjectSettings(json.project); }
                         this.loadScripts(projectScripts);
+                        // Algunos proyectos exportados dependen del script Player raíz para
+                        // inicializar imageTargets. Reconstruimos el registro desde la escena
+                        // como respaldo, sin duplicar los targets que ya registró su script.
+                        this.collectImageTargets();
                         this.play();
 
                         resolve(this.rootNode);
@@ -166,6 +172,40 @@ export default class ThreePlayer {
         if (project.toneMappingExposure !== undefined) { this.renderer.toneMappingExposure = project.toneMappingExposure; }
         if (project.shadows !== undefined) { this.renderer.shadowMap.enabled = project.shadows; }
         if (project.shadowType !== undefined) { this.renderer.shadowMap.type = project.shadowType; }
+    }
+
+    collectImageTargets() {
+        if (!Array.isArray(this.imageTargets)) this.imageTargets = [];
+
+        this.loadedScene?.traverse((object) => {
+            if (object.name !== "ImageTarget") return;
+
+            const gizmo = object.getObjectByName("Gizmo");
+            const arContent = object.getObjectByName("ARContent");
+            let imageTarget = object.imageTarget;
+
+            // Respaldo si el script ImageTarget del editor no pudo ejecutarse.
+            if (!imageTarget) {
+                imageTarget = {
+                    gizmo,
+                    arContent,
+                    target: gizmo?.material?.map ?? null,
+                    obj: object,
+                };
+                object.imageTarget = imageTarget;
+            } else {
+                imageTarget.gizmo = imageTarget.gizmo || gizmo;
+                imageTarget.arContent = imageTarget.arContent || arContent;
+                imageTarget.target = imageTarget.target || gizmo?.material?.map || null;
+                imageTarget.obj = imageTarget.obj || object;
+            }
+
+            if (!this.imageTargets.includes(imageTarget)) {
+                this.imageTargets.push(imageTarget);
+            }
+        });
+
+        console.info("ThreePlayer: ImageTargets registrados:", this.imageTargets.length);
     }
 
     // scripts: { [uuid del objeto]: [{ name, source }] }, tal como lo guarda el editor.
