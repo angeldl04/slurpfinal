@@ -1,50 +1,41 @@
-class WebCamera {
+export default class WebCamera {
 
-    constructor(container) {
-        this.container = container;
-        this.video = null;
+    constructor(video) {    
+        this.video = video;
         this.stream = null;
-
-        this.container.classList.add("position-relative");
-        this.container.style.position = "relative";
-        this.video = document.createElement("video");
         this.video.autoplay = true;
         this.video.playsInline = true;
-        this.video.muted = true;
-
-        Object.assign(this.video.style, {
-            position: "absolute",
-            inset: "0",
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            transform: "scaleX(-1)"
-        });
-        this.container.prepend(this.video);  
-        this.video.style.zIndex = "0";
+        this.video.muted = true;    
     }
 
     async startCamera(deviceId = null) {
 
         if (this.stream) { this.stream.getTracks().forEach(track => track.stop()); }
 
-        const constraints = {
-            video: deviceId
-                ? { deviceId: { exact: deviceId } }
-                : { facingMode: "user" }
+        const videoConstraints = {
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            frameRate: { ideal: 30, max: 30 }
         };
 
-        // this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+        if (deviceId) {
+            videoConstraints.deviceId = { exact: deviceId };
+        } else {
+            videoConstraints.facingMode = "user";
+        }
+
         this.stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                width: 640,
-                height: 480,
-                frameRate: { ideal: 30, max: 30 },
-                facingMode: "user"
-            }
+            video: videoConstraints
         });
+
         this.video.srcObject = this.stream;
-        await this.video.play();
+        await this.video.play();        
+    }
+
+    stopCamera() {
+        if (this.stream) { this.stream.getTracks().forEach(track => track.stop()); }
+        this.stream = null;
+        this.video.srcObject = null;
     }
 
     async getCameras() {
@@ -54,5 +45,3 @@ class WebCamera {
 
     async changeCamera(deviceId) { await this.startCamera(deviceId); }
 }
-
-export { WebCamera };
