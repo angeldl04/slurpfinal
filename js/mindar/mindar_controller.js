@@ -9,7 +9,8 @@ class MindARController {
         this.debug = debug;
         this.isMobile = /Android|iPhone|iPod|iPad/i.test(navigator.userAgent);
 
-        this.imageTargetSrc = 'assets/marker/targets.mind';
+        // Ruta absoluta respecto al módulo: funciona aunque la página tenga query o ruta interna.
+        this.imageTargetSrc = new URL('../../assets/marker/targets.mind', import.meta.url).href;
 
         this.mindar = null;
         this.anchors = [];
@@ -42,11 +43,18 @@ class MindARController {
         this.container.replaceChildren();
 
         const player = this.threePlayer;
-        const imageTargets = player?.imageTargets;
+        const imageTargets = Array.isArray(player?.imageTargets) ? player.imageTargets : [];
 
-        if (!imageTargets || !imageTargets.length) {
-            throw new Error('player.imageTargets está vacío. Asegurate de que los scripts de la escena se ejecutaron.');
+        if (!imageTargets.length) {
+            throw new Error('No se encontró ningún ImageTarget en la escena. Verifica el grupo "02 - Experiencia ImageTarget" de app.json.');
         }
+
+        console.info('MindAR: cargando targets:', imageTargets.length, this.imageTargetSrc);
+        imageTargets.forEach((target, index) => {
+            if (!target?.arContent) {
+                console.warn(`MindAR: el target ${index} no tiene un objeto ARContent asociado.`);
+            }
+        });
 
         this.mindar = new MindARThree({
             container: this.container,
