@@ -251,10 +251,11 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
             (lowerLip.y - upperLip.y) * video.videoHeight
         );
 
-        // En algunos celulares jawOpen devuelve valores mas bajos.
-        // Combinamos el blendshape con la distancia real entre los labios.
+        // En móviles el blendshape jawOpen puede ser poco sensible.
+        // Usamos también la apertura geométrica de los labios en píxeles,
+        // con un umbral menor para cámaras frontales y pantallas pequeñas.
         const mouthOpeningRatio = mouthGap / Math.max(width, 1);
-        const isMouthOpen = jawOpen >= 0.24 || mouthOpeningRatio >= 0.14;
+        const isMouthOpen = jawOpen >= 0.18 || mouthOpeningRatio >= 0.065;
 
         if (!isMouthOpen) {
             vomitOverlay.style.opacity = "0";
