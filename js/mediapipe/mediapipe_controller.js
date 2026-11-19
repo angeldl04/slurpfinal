@@ -52,7 +52,7 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
     // Se dibuja en SVG sobre la cámara para seguir los landmarks en tiempo real.
     const vomitOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     vomitOverlay.setAttribute("viewBox", `0 0 ${video.videoWidth || 1} ${video.videoHeight || 1}`);
-    vomitOverlay.setAttribute("preserveAspectRatio", "xMidYMid slice");
+    vomitOverlay.setAttribute("preserveAspectRatio", "none");
     vomitOverlay.setAttribute("aria-hidden", "true");
     Object.assign(vomitOverlay.style, {
         position: "absolute",
@@ -62,6 +62,7 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
         zIndex: "4",
         pointerEvents: "none",
         overflow: "visible",
+        display: "block",
         transform: "scaleX(-1)",
         opacity: "0",
         transition: "opacity 90ms ease-out"
@@ -242,6 +243,22 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
             return;
         }
 
+        // El SVG usa el tamaño visible del contenedor, no la resolución
+        // interna de la cámara. Así coincide con object-fit: cover también
+        // cuando el móvil entrega video horizontal en una pantalla vertical.
+        const overlayWidth = app.clientWidth || video.videoWidth;
+        const overlayHeight = app.clientHeight || video.videoHeight;
+        const videoScale = Math.max(
+            overlayWidth / video.videoWidth,
+            overlayHeight / video.videoHeight
+        );
+        const renderedWidth = video.videoWidth * videoScale;
+        const renderedHeight = video.videoHeight * videoScale;
+        const cropX = (overlayWidth - renderedWidth) / 2;
+        const cropY = (overlayHeight - renderedHeight) / 2;
+
+        vomitOverlay.setAttribute("viewBox", `0 0 ${overlayWidth} ${overlayHeight}`);
+
         const width = Math.hypot(
             (rightCorner.x - leftCorner.x) * video.videoWidth,
             (rightCorner.y - leftCorner.y) * video.videoHeight
@@ -251,9 +268,7 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
             (lowerLip.y - upperLip.y) * video.videoHeight
         );
 
-        // En móviles el blendshape jawOpen puede ser poco sensible.
-        // Usamos también la apertura geométrica de los labios en píxeles,
-        // con un umbral menor para cámaras frontales y pantallas pequeñas.
+        // Se conserva el mismo detector que ya activa el sonido Splash.
         const mouthOpeningRatio = mouthGap / Math.max(width, 1);
         const isMouthOpen = jawOpen >= 0.18 || mouthOpeningRatio >= 0.065;
 
@@ -263,12 +278,13 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
             return;
         }
 
-        const centerX = (leftCorner.x + rightCorner.x) * 0.5 * video.videoWidth;
-        const mouthBottomY = Math.max(upperLip.y, lowerLip.y) * video.videoHeight;
+        const centerX = ((leftCorner.x + rightCorner.x) * 0.5 * video.videoWidth) * videoScale + cropX;
+        const mouthBottomY = Math.max(upperLip.y, lowerLip.y) * video.videoHeight * videoScale + cropY;
 
-        // El efecto crece con la apertura de la mandíbula, sin dejar rastros.
-        const effectWidth = Math.max(width * 0.92, 18);
-        const effectHeight = Math.max(mouthGap * 2.8, width * 0.72);
+        // Escala el slime en coordenadas visibles para mantener su posición
+        // y tamaño correctos en móviles y escritorio.
+        const effectWidth = Math.max(width * videoScale * 0.92, 18);
+        const effectHeight = Math.max(mouthGap * videoScale * 2.8, width * videoScale * 0.72);
         const startY = mouthBottomY - effectHeight * 0.08;
 
         vomitShape.setAttribute(
