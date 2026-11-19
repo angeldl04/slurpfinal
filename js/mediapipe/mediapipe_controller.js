@@ -308,6 +308,7 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
     const mask = player.rootNode.getObjectByName(MASK_NAME);
     if (mask) {
         for (const child of [...mask.children]) mask.parent.attach(child);
+        mask.frustumCulled = false;
         faceRenderer.faceGroup.add(mask);
     } else {
         console.warn(`La escena no tiene un objeto "${MASK_NAME}": no habra mascara facial.`);
