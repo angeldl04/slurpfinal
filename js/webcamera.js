@@ -14,9 +14,9 @@ export default class WebCamera {
 
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
         const videoConstraints = {
-            width: { ideal: isMobile ? 960 : 1280 },
-            height: { ideal: isMobile ? 540 : 720 },
-            frameRate: { ideal: 30, max: 30 }
+            width: { ideal: isMobile ? 640 : 960 },
+            height: { ideal: isMobile ? 480 : 540 },
+            frameRate: { ideal: 24, max: 24 }
         };
 
         if (deviceId) {
