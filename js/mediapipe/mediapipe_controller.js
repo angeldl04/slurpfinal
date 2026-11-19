@@ -169,12 +169,28 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
     const rightEyeSpiral = createEyeSpiral("slurp-right-eye-spiral");
     app.appendChild(spiralOverlay);
 
+    // Sonido UFO: se reproduce una sola vez cada vez que empieza una sonrisa.
+    const ufoSound = new Audio(new URL("../../assets/ufo.mp3", import.meta.url).href);
+    ufoSound.preload = "auto";
+    ufoSound.volume = 0.8;
+    let wasSmiling = false;
+
     function updateSlurpSpiral(landmarks) {
         spiralOverlay.setAttribute("viewBox", `0 0 ${video.videoWidth || 1} ${video.videoHeight || 1}`);
         const smileLeft = tracker.getBlendShape("mouthSmileLeft");
         const smileRight = tracker.getBlendShape("mouthSmileRight");
         const smile = Math.max(smileLeft, smileRight);
         const visible = !!landmarks && smile >= 0.22;
+
+        // Dispara el audio al comenzar la sonrisa, no en cada fotograma.
+        if (visible && !wasSmiling) {
+            ufoSound.pause();
+            ufoSound.currentTime = 0;
+            ufoSound.play().catch((error) => {
+                console.warn("No se pudo reproducir el sonido UFO:", error);
+            });
+        }
+        wasSmiling = visible;
 
         const placeSpiral = (spiral, outerIndex, innerIndex) => {
             if (!visible) {
