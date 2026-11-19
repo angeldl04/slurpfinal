@@ -238,7 +238,7 @@ export default class ThreeFaceRenderer {
 
     drawMesh(landmarks) {
 
-        if (!landmarks || landmarks.length === 0)
+        if (!this.showHelpers || !this.showMesh || !landmarks || landmarks.length === 0)
             return;
 
         if (!this.mesh) {
@@ -295,7 +295,7 @@ export default class ThreeFaceRenderer {
 
     drawConnectors(landmarks) {
 
-        if (!landmarks || landmarks.length === 0)
+        if (!this.showHelpers || !this.showConnectors || !landmarks || landmarks.length === 0)
             return;
 
         if (!this.connectors) {
@@ -317,7 +317,7 @@ export default class ThreeFaceRenderer {
 
     drawContours(landmarks) {
 
-        if (!landmarks || landmarks.length === 0)
+        if (!this.showHelpers || !this.showContours || !landmarks || landmarks.length === 0)
             return;
 
         if (!this.contours) {
@@ -339,7 +339,7 @@ export default class ThreeFaceRenderer {
 
     drawIrises(landmarks) {
 
-        if (!landmarks || landmarks.length === 0)
+        if (!this.showHelpers || !this.showIrises || !landmarks || landmarks.length === 0)
             return;
 
         if (!this.irises) {
@@ -374,7 +374,7 @@ export default class ThreeFaceRenderer {
 
     drawPoints(landmarks, radius = 2) {
 
-        if (!landmarks || landmarks.length === 0)
+        if (!this.showHelpers || !this.showPoints || !landmarks || landmarks.length === 0)
             return;
 
         if (!this.video.videoWidth || !this.video.videoHeight)
@@ -740,18 +740,7 @@ export default class ThreeFaceRenderer {
 
         mesh.geometry.attributes.position.needsUpdate = true;
 
-        if (mesh.geometry.attributes.normal) {
-
-            mesh.geometry.computeVertexNormals();
-            mesh.geometry.attributes.normal.needsUpdate = true;
-
-        }
-
-        if (mesh.geometry.boundingSphere) {
-
-            mesh.geometry.computeBoundingSphere();
-
-        }
+        // Evita recalcular normales y límites completos en cada fotograma móvil.
 
         mesh.position.copy(this.pivot);
         mesh.quaternion.identity();
