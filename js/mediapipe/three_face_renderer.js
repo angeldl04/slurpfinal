@@ -447,6 +447,29 @@ export default class ThreeFaceRenderer {
 
     alignCamera() { this.resize(); }
 
+    setLandmarks(landmarks) {
+
+        this.landmarks = landmarks;
+
+        if (!landmarks || landmarks.length === 0 ||
+            !this.video.videoWidth || !this.video.videoHeight)
+            return;
+
+        const aspect = this.video.videoWidth / this.video.videoHeight;
+        const left = landmarks[234];
+        const right = landmarks[454];
+
+        if (!left || !right)
+            return;
+
+        this.pivot.set(
+            ((left.x - 0.5) * aspect + (right.x - 0.5) * aspect) / 2,
+            (-(left.y - 0.5) + -(right.y - 0.5)) / 2,
+            (-(left.z * aspect) + -(right.z * aspect)) / 2
+        );
+
+    }
+
     getHeadPose() {
 
         const landmarks = this.landmarks;
