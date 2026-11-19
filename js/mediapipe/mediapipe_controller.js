@@ -154,7 +154,9 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
         const smileRight = tracker.getBlendShape("mouthSmileRight");
         const smile = Math.max(smileLeft, smileRight);
 
-        if (!landmarks || smile < 0.42) {
+        // Umbral más sensible: MediaPipe suele entregar valores moderados
+        // incluso cuando la sonrisa es claramente visible.
+        if (!landmarks || smile < 0.22) {
             spiralGroup.setAttribute("opacity", "0");
             return;
         }
