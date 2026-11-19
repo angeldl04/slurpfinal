@@ -763,15 +763,17 @@ export default class ThreeFaceRenderer {
 
         mesh.geometry.attributes.position.needsUpdate = true;
 
-        // Mantiene actualizadas las normales para que la máscara facial conserve su iluminación.
-        if (mesh.geometry.attributes.normal) {
+        // Recalcula normales cada 3 fotogramas: conserva la iluminación
+        // sin repetir el cálculo pesado en cada actualización.
+        this.maskNormalFrame = (this.maskNormalFrame || 0) + 1;
+        if (mesh.geometry.attributes.normal && this.maskNormalFrame % 3 === 0) {
             mesh.geometry.computeVertexNormals();
             mesh.geometry.attributes.normal.needsUpdate = true;
         }
 
-        // La geometría cambia con cada rostro: actualiza su volumen para evitar
-        // que Three.js oculte la máscara por un límite de encuadre desactualizado.
-        mesh.geometry.computeBoundingSphere();
+        // La máscara se mueve con el rostro; desactivar frustumCulled evita
+        // recalcular su bounding sphere en cada fotograma.
+        mesh.frustumCulled = false;
 
         mesh.position.copy(this.pivot);
         mesh.quaternion.identity();
