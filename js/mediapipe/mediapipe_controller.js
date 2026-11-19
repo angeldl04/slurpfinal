@@ -321,6 +321,7 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
         faceEvents.update(tracker);
 
         const landmarks = tracker.getLandmarks();
+        faceRenderer.setLandmarks(landmarks);
         updateSlurpVomit(landmarks);
         updateSlurpSpiral(landmarks);
 
