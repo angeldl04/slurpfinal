@@ -232,7 +232,11 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
         const leftCorner = landmarks?.[61];
         const rightCorner = landmarks?.[291];
 
-        if (!landmarks || !upperLip || !lowerLip || !leftCorner || !rightCorner || jawOpen < 0.38) {
+        if (
+            !landmarks || !upperLip || !lowerLip ||
+            !leftCorner || !rightCorner ||
+            !video.videoWidth || !video.videoHeight
+        ) {
             vomitOverlay.style.opacity = "0";
             vomitShape.setAttribute("opacity", "0");
             return;
@@ -246,6 +250,18 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
             (lowerLip.x - upperLip.x) * video.videoWidth,
             (lowerLip.y - upperLip.y) * video.videoHeight
         );
+
+        // En algunos celulares jawOpen devuelve valores mas bajos.
+        // Combinamos el blendshape con la distancia real entre los labios.
+        const mouthOpeningRatio = mouthGap / Math.max(width, 1);
+        const isMouthOpen = jawOpen >= 0.24 || mouthOpeningRatio >= 0.14;
+
+        if (!isMouthOpen) {
+            vomitOverlay.style.opacity = "0";
+            vomitShape.setAttribute("opacity", "0");
+            return;
+        }
+
         const centerX = (leftCorner.x + rightCorner.x) * 0.5 * video.videoWidth;
         const mouthBottomY = Math.max(upperLip.y, lowerLip.y) * video.videoHeight;
 
