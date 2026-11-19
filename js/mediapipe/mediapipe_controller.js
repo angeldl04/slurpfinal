@@ -184,11 +184,14 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
 
         // Dispara el audio al comenzar la sonrisa, no en cada fotograma.
         if (visible && !wasSmiling) {
-            ufoSound.pause();
             ufoSound.currentTime = 0;
             ufoSound.play().catch((error) => {
                 console.warn("No se pudo reproducir el sonido UFO:", error);
             });
+        } else if (!visible && wasSmiling) {
+            // Detiene el sonido inmediatamente cuando deja de sonreír.
+            ufoSound.pause();
+            ufoSound.currentTime = 0;
         }
         wasSmiling = visible;
 
