@@ -100,10 +100,27 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
     const vomitShape = vomitOverlay.querySelector("#slurp-vomit-shape");
 
     // Espiral SLURP: aparece sobre el ojo que se cierre y gira continuamente.
-    const spiralGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    spiralGroup.setAttribute("id", "slurp-eye-spiral");
-    spiralGroup.setAttribute("opacity", "0");
-    spiralGroup.innerHTML = `
+    // Cada ojo tiene su propia espiral y su propia capa de rotación.
+    const spiralStyle = document.createElementNS("http://www.w3.org/2000/svg", "style");
+    spiralStyle.textContent = "@keyframes slurp-eye-spin { to { transform: rotate(360deg); } }";
+
+    const spiralOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    spiralOverlay.setAttribute("viewBox", `0 0 ${video.videoWidth || 1} ${video.videoHeight || 1}`);
+    spiralOverlay.setAttribute("preserveAspectRatio", "xMidYMid slice");
+    spiralOverlay.setAttribute("aria-hidden", "true");
+    Object.assign(spiralOverlay.style, {
+        position: "absolute", inset: "0", width: "100%", height: "100%",
+        zIndex: "5", pointerEvents: "none", overflow: "visible",
+        transform: "scaleX(-1)"
+    });
+    spiralOverlay.appendChild(spiralStyle);
+
+    function createEyeSpiral(id) {
+        const position = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        const rotating = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        rotating.setAttribute("id", id);
+        rotating.setAttribute("opacity", "0");
+        rotating.innerHTML = `
         <defs>
             <linearGradient id="slurpSpiralPink" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stop-color="#ff8bc9"/>
@@ -137,71 +154,56 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
         <ellipse cx="72" cy="20" rx="5" ry="2.5" fill="#ffe0ef" transform="rotate(24 72 20)"/>
         <circle cx="22" cy="35" r="2.5" fill="#ffd0e8"/>
         <circle cx="85" cy="72" r="2" fill="#ffd0e8"/>
-    `;
-    // Grupo exterior: fija la espiral sobre el ojo. Grupo interior: solo rota el dibujo.
-    const spiralPosition = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    Object.assign(spiralGroup.style, {
-        transformBox: "fill-box",
-        transformOrigin: "center",
-        animation: "slurp-eye-spin 1.05s linear infinite"
-    });
-    const spiralStyle = document.createElementNS("http://www.w3.org/2000/svg", "style");
-    spiralStyle.textContent = "@keyframes slurp-eye-spin { to { transform: rotate(360deg); } }";
-    spiralPosition.appendChild(spiralGroup);
-    // Overlay independiente: la espiral debe poder verse aunque la boca esté cerrada.
-    const spiralOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    spiralOverlay.setAttribute("viewBox", `0 0 ${video.videoWidth || 1} ${video.videoHeight || 1}`);
-    spiralOverlay.setAttribute("preserveAspectRatio", "xMidYMid slice");
-    spiralOverlay.setAttribute("aria-hidden", "true");
-    Object.assign(spiralOverlay.style, {
-        position: "absolute",
-        inset: "0",
-        width: "100%",
-        height: "100%",
-        zIndex: "5",
-        pointerEvents: "none",
-        overflow: "visible",
-        transform: "scaleX(-1)"
-    });
-    spiralOverlay.appendChild(spiralStyle);
-    spiralOverlay.appendChild(spiralPosition);
+`;
+        Object.assign(rotating.style, {
+            transformBox: "fill-box",
+            transformOrigin: "center",
+            animation: "slurp-eye-spin 1.05s linear infinite"
+        });
+        position.appendChild(rotating);
+        spiralOverlay.appendChild(position);
+        return { position, rotating };
+    }
+
+    const leftEyeSpiral = createEyeSpiral("slurp-left-eye-spiral");
+    const rightEyeSpiral = createEyeSpiral("slurp-right-eye-spiral");
     app.appendChild(spiralOverlay);
 
     function updateSlurpSpiral(landmarks) {
         spiralOverlay.setAttribute("viewBox", `0 0 ${video.videoWidth || 1} ${video.videoHeight || 1}`);
-        // La espiral se activa al sonreír, usando los blendshapes de MediaPipe.
         const smileLeft = tracker.getBlendShape("mouthSmileLeft");
         const smileRight = tracker.getBlendShape("mouthSmileRight");
         const smile = Math.max(smileLeft, smileRight);
+        const visible = !!landmarks && smile >= 0.22;
 
-        // Umbral más sensible: MediaPipe suele entregar valores moderados
-        // incluso cuando la sonrisa es claramente visible.
-        if (!landmarks || smile < 0.22) {
-            spiralGroup.setAttribute("opacity", "0");
-            return;
-        }
+        const placeSpiral = (spiral, outerIndex, innerIndex) => {
+            if (!visible) {
+                spiral.rotating.setAttribute("opacity", "0");
+                return;
+            }
+            const outer = landmarks[outerIndex];
+            const inner = landmarks[innerIndex];
+            if (!outer || !inner) {
+                spiral.rotating.setAttribute("opacity", "0");
+                return;
+            }
+            const centerX = (outer.x + inner.x) * 0.5 * video.videoWidth;
+            const centerY = (outer.y + inner.y) * 0.5 * video.videoHeight;
+            const eyeWidth = Math.hypot(
+                (inner.x - outer.x) * video.videoWidth,
+                (inner.y - outer.y) * video.videoHeight
+            );
+            const size = Math.max(eyeWidth * 1.55, 42);
+            spiral.position.setAttribute(
+                "transform",
+                `translate(${centerX - size / 2} ${centerY - size / 2}) scale(${size / 100})`
+            );
+            spiral.rotating.setAttribute("opacity", String(Math.min(1, 0.7 + smile * 0.4)));
+        };
 
-        // La espiral aparece siempre sobre el mismo ojo para evitar saltos.
-        const outer = landmarks[362];
-        const inner = landmarks[263];
-        if (!outer || !inner) {
-            spiralGroup.setAttribute("opacity", "0");
-            return;
-        }
-
-        const centerX = (outer.x + inner.x) * 0.5 * video.videoWidth;
-        const centerY = (outer.y + inner.y) * 0.5 * video.videoHeight;
-        const eyeWidth = Math.hypot(
-            (inner.x - outer.x) * video.videoWidth,
-            (inner.y - outer.y) * video.videoHeight
-        );
-        const size = Math.max(eyeWidth * 1.55, 42);
-
-        spiralPosition.setAttribute(
-            "transform",
-            `translate(${centerX - size / 2} ${centerY - size / 2}) scale(${size / 100})`
-        );
-        spiralGroup.setAttribute("opacity", String(Math.min(1, 0.7 + smile * 0.4)));
+        // MediaPipe: ojo anatómico izquierdo (362-263) y derecho (33-133).
+        placeSpiral(leftEyeSpiral, 362, 263);
+        placeSpiral(rightEyeSpiral, 33, 133);
     }
 
     function updateSlurpVomit(landmarks) {
