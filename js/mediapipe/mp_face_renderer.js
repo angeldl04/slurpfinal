@@ -26,10 +26,10 @@ export default class MPFaceRenderer {
 
     
     drawMesh(landmarks) {
-        this.resize();
-        this.clear();
         if (!landmarks || !this.showMesh || !this.showHelpers)
             return;
+        this.resize();
+        this.clear();
 
         this.drawer.drawConnectors(
             landmarks,
