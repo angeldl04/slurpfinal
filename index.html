@@ -561,19 +561,37 @@
         const infoTitle = document.getElementById('info-title');
         const infoText = document.getElementById('info-text');
 
-        document.querySelectorAll('.ar-btn').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const data = INFO[btn.dataset.info];
-                infoTitle.textContent = data.titulo;
-                infoText.textContent = data.texto;
-                infoPanel.style.setProperty('--c', btn.dataset.color);
-                infoPanel.classList.remove('oculto');
-            });
+        // Evita que los eventos táctiles de los controles lleguen al raycaster 3D.
+        arButtons.addEventListener('pointerdown', (event) => {
+            event.stopPropagation();
         });
 
-        document.getElementById('info-close').addEventListener('click', () => {
-            infoPanel.classList.add('oculto');
+        arButtons.addEventListener('click', (event) => {
+            const btn = event.target.closest('.ar-btn');
+            if (!btn) return;
+
+            const data = INFO[btn.dataset.info];
+            if (!data) return;
+
+            infoTitle.textContent = data.titulo;
+            infoText.textContent = data.texto;
+            infoPanel.style.setProperty('--c', btn.dataset.color || '#F81390');
+            infoPanel.classList.remove('oculto');
+            infoPanel.style.display = 'block';
+            infoPanel.style.visibility = 'visible';
+            infoPanel.style.opacity = '1';
         });
+
+        const closeInfoPanel = () => {
+            infoPanel.classList.add('oculto');
+            infoPanel.style.display = 'none';
+        };
+
+        document.getElementById('info-close').addEventListener('pointerdown', (event) => {
+            event.stopPropagation();
+        });
+
+        document.getElementById('info-close').addEventListener('click', closeInfoPanel);
 
         // ------------------------------------------------------------------
 
@@ -640,7 +658,7 @@
 
                 mindarController.addListener('lost', () => {
                     arButtons.classList.add('oculto');
-                    infoPanel.classList.add('oculto');
+                    closeInfoPanel();
                 });
 
                 await mindarController.start();
