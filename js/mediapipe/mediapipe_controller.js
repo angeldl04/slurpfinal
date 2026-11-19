@@ -138,6 +138,8 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
         <circle cx="22" cy="35" r="2.5" fill="#ffd0e8"/>
         <circle cx="85" cy="72" r="2" fill="#ffd0e8"/>
     `;
+    // Grupo exterior: fija la espiral sobre el ojo. Grupo interior: solo rota el dibujo.
+    const spiralPosition = document.createElementNS("http://www.w3.org/2000/svg", "g");
     Object.assign(spiralGroup.style, {
         transformBox: "fill-box",
         transformOrigin: "center",
@@ -145,6 +147,7 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
     });
     const spiralStyle = document.createElementNS("http://www.w3.org/2000/svg", "style");
     spiralStyle.textContent = "@keyframes slurp-eye-spin { to { transform: rotate(360deg); } }";
+    spiralPosition.appendChild(spiralGroup);
     // Overlay independiente: la espiral debe poder verse aunque la boca esté cerrada.
     const spiralOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     spiralOverlay.setAttribute("viewBox", `0 0 ${video.videoWidth || 1} ${video.videoHeight || 1}`);
@@ -161,7 +164,7 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
         transform: "scaleX(-1)"
     });
     spiralOverlay.appendChild(spiralStyle);
-    spiralOverlay.appendChild(spiralGroup);
+    spiralOverlay.appendChild(spiralPosition);
     app.appendChild(spiralOverlay);
 
     function updateSlurpSpiral(landmarks) {
@@ -194,7 +197,7 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
         );
         const size = Math.max(eyeWidth * 1.55, 42);
 
-        spiralGroup.setAttribute(
+        spiralPosition.setAttribute(
             "transform",
             `translate(${centerX - size / 2} ${centerY - size / 2}) scale(${size / 100})`
         );
