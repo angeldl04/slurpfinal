@@ -211,6 +211,38 @@
             transform: rotate(-35deg);
         }
 
+
+        /* Aviso temporal para recordar la tarjeta física SLURP */
+        #image-hint-toast {
+            position: fixed;
+            left: 50%;
+            bottom: max(28px, env(safe-area-inset-bottom));
+            z-index: 1002;
+            width: min(88vw, 520px);
+            box-sizing: border-box;
+            padding: 16px 22px;
+            border: 3px solid #000;
+            border-radius: 18px;
+            background: #ff1493;
+            color: #fff;
+            box-shadow: 6px 6px 0 #000;
+            font-family: 'Titan One', cursive;
+            font-size: clamp(14px, 2.2vw, 18px);
+            line-height: 1.35;
+            text-align: center;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translate(-50%, 16px) scale(.96);
+            transition: opacity .25s ease, transform .25s ease, visibility .25s ease;
+        }
+
+        #image-hint-toast.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, 0) scale(1);
+        }
+
         #mode-message {
             min-height: 22px;
             margin: 5px 0 0;
@@ -332,6 +364,10 @@
     <!-- Overlay combinado con logo y botón estilizado (Desde index1.html) -->
     <div id="overlay">
         <img id="brand-logo" src="assets/Logotipo burbuja brillante SLWIP.png" alt="SLURP Logo">
+
+        <div id="image-hint-toast" role="status" aria-live="polite">
+            ¡Prepara tu tarjeta SLURP! Enfócala con tu cámara para activar la experiencia.
+        </div>
         
         <div id="mode-selection">
             <h1 id="mode-title">ELIGE TU EXPERIENCIA</h1>
@@ -376,6 +412,7 @@
         const imageModeButton = document.getElementById('image-mode-button');
         const modeSelection = document.getElementById('mode-selection');
         const modeMessage = document.getElementById('mode-message');
+        const imageHintToast = document.getElementById('image-hint-toast');
         const arContainer = document.getElementById('ar-container');
         const faceExperience = document.getElementById('face-experience');
         const progressContainer = document.getElementById('progress-container');
@@ -507,7 +544,19 @@
             }
         }
 
-        imageModeButton.addEventListener('click', startImageExperience);
+        let imageHintTimer = null;
+
+        imageModeButton.addEventListener('click', () => {
+            imageHintToast.classList.add('visible');
+
+            if (imageHintTimer) clearTimeout(imageHintTimer);
+            imageHintTimer = setTimeout(() => {
+                imageHintToast.classList.remove('visible');
+                imageHintTimer = null;
+            }, 4000);
+
+            startImageExperience();
+        });
 
         let faceFilter = null;
         let faceStarting = false;
