@@ -104,21 +104,39 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
     spiralGroup.setAttribute("id", "slurp-eye-spiral");
     spiralGroup.setAttribute("opacity", "0");
     spiralGroup.innerHTML = `
-        <path d="M 50 8 C 78 5 96 27 91 53 C 87 78 62 94 38 85
-                 C 15 77 9 51 22 33 C 34 17 59 18 70 33
-                 C 81 48 72 67 57 71 C 43 75 31 64 35 51
-                 C 38 41 51 38 58 45 C 64 51 60 60 53 61"
-              fill="none" stroke="#101600" stroke-width="13"
+        <defs>
+            <linearGradient id="slurpSpiralPink" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ff8bc9"/>
+                <stop offset="38%" stop-color="#ff3ca4"/>
+                <stop offset="100%" stop-color="#e60078"/>
+            </linearGradient>
+        </defs>
+        <path d="M 52 7 C 79 5 97 27 91 54 C 86 82 60 96 34 84
+                 C 10 73 8 45 25 25 C 42 6 72 13 79 37
+                 C 86 60 69 79 48 76 C 29 73 22 55 31 40
+                 C 40 25 61 28 66 42 C 71 55 61 65 49 63
+                 C 40 62 37 54 42 48"
+              fill="none" stroke="#171019" stroke-width="31"
               stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M 50 8 C 78 5 96 27 91 53 C 87 78 62 94 38 85
-                 C 15 77 9 51 22 33 C 34 17 59 18 70 33
-                 C 81 48 72 67 57 71 C 43 75 31 64 35 51
-                 C 38 41 51 38 58 45 C 64 51 60 60 53 61"
-              fill="none" stroke="#aaff00" stroke-width="8"
+        <path d="M 52 7 C 79 5 97 27 91 54 C 86 82 60 96 34 84
+                 C 10 73 8 45 25 25 C 42 6 72 13 79 37
+                 C 86 60 69 79 48 76 C 29 73 22 55 31 40
+                 C 40 25 61 28 66 42 C 71 55 61 65 49 63
+                 C 40 62 37 54 42 48"
+              fill="none" stroke="url(#slurpSpiralPink)" stroke-width="23"
               stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M 18 12 L 22 2 L 27 12 L 37 16 L 27 20 L 22 30 L 18 20 L 8 16 Z"
-              fill="#d7ff35" stroke="#101600" stroke-width="3" stroke-linejoin="round"/>
-        <circle cx="88" cy="12" r="5" fill="#d7ff35" stroke="#101600" stroke-width="2"/>
+        <path d="M 35 15 C 52 5 72 12 78 27"
+              fill="none" stroke="#ffd0e8" stroke-width="4"
+              stroke-linecap="round" opacity=".9"/>
+        <path d="M 17 49 C 14 64 24 77 37 81"
+              fill="none" stroke="#ffb4dc" stroke-width="3.5"
+              stroke-linecap="round" opacity=".8"/>
+        <path d="M 71 72 C 82 64 87 51 83 39"
+              fill="none" stroke="#b90062" stroke-width="3"
+              stroke-linecap="round" opacity=".7"/>
+        <ellipse cx="72" cy="20" rx="5" ry="2.5" fill="#ffe0ef" transform="rotate(24 72 20)"/>
+        <circle cx="22" cy="35" r="2.5" fill="#ffd0e8"/>
+        <circle cx="85" cy="72" r="2" fill="#ffd0e8"/>
     `;
     Object.assign(spiralGroup.style, {
         transformBox: "fill-box",
