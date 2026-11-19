@@ -149,19 +149,19 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
     vomitOverlay.appendChild(spiralGroup);
 
     function updateSlurpSpiral(landmarks) {
-        const blinkLeft = tracker.getBlendShape("eyeBlinkLeft");
-        const blinkRight = tracker.getBlendShape("eyeBlinkRight");
-        const leftClosed = blinkLeft > 0.58 && blinkRight < 0.38;
-        const rightClosed = blinkRight > 0.58 && blinkLeft < 0.38;
+        // La espiral se activa al sonreír, usando los blendshapes de MediaPipe.
+        const smileLeft = tracker.getBlendShape("mouthSmileLeft");
+        const smileRight = tracker.getBlendShape("mouthSmileRight");
+        const smile = Math.max(smileLeft, smileRight);
 
-        if (!landmarks || (!leftClosed && !rightClosed)) {
+        if (!landmarks || smile < 0.42) {
             spiralGroup.setAttribute("opacity", "0");
             return;
         }
 
-        // Centros aproximados de cada ojo a partir de sus esquinas.
-        const outer = leftClosed ? landmarks[362] : landmarks[33];
-        const inner = leftClosed ? landmarks[263] : landmarks[133];
+        // La espiral aparece siempre sobre el mismo ojo para evitar saltos.
+        const outer = landmarks[362];
+        const inner = landmarks[263];
         if (!outer || !inner) {
             spiralGroup.setAttribute("opacity", "0");
             return;
@@ -179,7 +179,7 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
             "transform",
             `translate(${centerX - size / 2} ${centerY - size / 2}) scale(${size / 100})`
         );
-        spiralGroup.setAttribute("opacity", "1");
+        spiralGroup.setAttribute("opacity", String(Math.min(1, 0.7 + smile * 0.4)));
     }
 
     function updateSlurpVomit(landmarks) {
