@@ -145,10 +145,27 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
     });
     const spiralStyle = document.createElementNS("http://www.w3.org/2000/svg", "style");
     spiralStyle.textContent = "@keyframes slurp-eye-spin { to { transform: rotate(360deg); } }";
-    vomitOverlay.appendChild(spiralStyle);
-    vomitOverlay.appendChild(spiralGroup);
+    // Overlay independiente: la espiral debe poder verse aunque la boca esté cerrada.
+    const spiralOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    spiralOverlay.setAttribute("viewBox", `0 0 ${video.videoWidth || 1} ${video.videoHeight || 1}`);
+    spiralOverlay.setAttribute("preserveAspectRatio", "xMidYMid slice");
+    spiralOverlay.setAttribute("aria-hidden", "true");
+    Object.assign(spiralOverlay.style, {
+        position: "absolute",
+        inset: "0",
+        width: "100%",
+        height: "100%",
+        zIndex: "5",
+        pointerEvents: "none",
+        overflow: "visible",
+        transform: "scaleX(-1)"
+    });
+    spiralOverlay.appendChild(spiralStyle);
+    spiralOverlay.appendChild(spiralGroup);
+    app.appendChild(spiralOverlay);
 
     function updateSlurpSpiral(landmarks) {
+        spiralOverlay.setAttribute("viewBox", `0 0 ${video.videoWidth || 1} ${video.videoHeight || 1}`);
         // La espiral se activa al sonreír, usando los blendshapes de MediaPipe.
         const smileLeft = tracker.getBlendShape("mouthSmileLeft");
         const smileRight = tracker.getBlendShape("mouthSmileRight");
