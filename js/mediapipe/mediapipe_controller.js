@@ -79,7 +79,7 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
                 <feDropShadow dx="3" dy="5" stdDeviation="2" flood-color="#102000" flood-opacity=".45"/>
             </filter>
         </defs>
-        <g id="slurp-vomit-shape" opacity="0" filter="url(#slurpSlimeShadow)">
+        <g id="slurp-vomit-shape" opacity="0">
             <path id="slurp-vomit-main"
                 d="M .08 0 C .18 .16 .18 .28 .30 .43 C .38 .55 .25 .72 .38 .91
                    C .45 1.02 .58 .98 .62 .84 C .67 .69 .57 .58 .72 .43
@@ -252,12 +252,18 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
             overlayWidth / video.videoWidth,
             overlayHeight / video.videoHeight
         );
+
+        // Mantiene el sistema de coordenadas del SVG igual al tamaño visible
+        // del contenedor. No debe volver a la resolución interna del video.
+        const currentViewBox = vomitOverlay.getAttribute("viewBox");
+        const expectedViewBox = `0 0 ${overlayWidth} ${overlayHeight}`;
+        if (currentViewBox !== expectedViewBox) {
+            vomitOverlay.setAttribute("viewBox", expectedViewBox);
+        }
         const renderedWidth = video.videoWidth * videoScale;
         const renderedHeight = video.videoHeight * videoScale;
         const cropX = (overlayWidth - renderedWidth) / 2;
         const cropY = (overlayHeight - renderedHeight) / 2;
-
-        vomitOverlay.setAttribute("viewBox", `0 0 ${overlayWidth} ${overlayHeight}`);
 
         const width = Math.hypot(
             (rightCorner.x - leftCorner.x) * video.videoWidth,
@@ -292,7 +298,6 @@ export async function startFaceFilter(scenePath, { showGui = true } = {}) {
             `translate(${centerX - effectWidth / 2} ${startY}) scale(${effectWidth} ${effectHeight})`
         );
         vomitShape.setAttribute("opacity", String(Math.min(1, 0.72 + jawOpen * 0.5)));
-        vomitOverlay.setAttribute("viewBox", `0 0 ${video.videoWidth} ${video.videoHeight}`);
         vomitOverlay.style.opacity = "1";
     }
 
