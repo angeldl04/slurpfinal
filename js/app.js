@@ -69,7 +69,7 @@ export default class ThreePlayer {
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
 
-        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
         this.renderer.setSize(width, height);
         this.renderer.setClearColor(0x000000, 0);
 
