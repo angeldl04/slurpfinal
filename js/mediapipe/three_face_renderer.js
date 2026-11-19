@@ -740,7 +740,11 @@ export default class ThreeFaceRenderer {
 
         mesh.geometry.attributes.position.needsUpdate = true;
 
-        // Evita recalcular normales y límites completos en cada fotograma móvil.
+        // Mantiene actualizadas las normales para que la máscara facial conserve su iluminación.
+        if (mesh.geometry.attributes.normal) {
+            mesh.geometry.computeVertexNormals();
+            mesh.geometry.attributes.normal.needsUpdate = true;
+        }
 
         mesh.position.copy(this.pivot);
         mesh.quaternion.identity();
