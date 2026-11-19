@@ -12,9 +12,10 @@ export default class WebCamera {
 
         if (this.stream) { this.stream.getTracks().forEach(track => track.stop()); }
 
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
         const videoConstraints = {
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
+            width: { ideal: isMobile ? 960 : 1280 },
+            height: { ideal: isMobile ? 540 : 720 },
             frameRate: { ideal: 30, max: 30 }
         };
 
