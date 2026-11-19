@@ -746,6 +746,10 @@ export default class ThreeFaceRenderer {
             mesh.geometry.attributes.normal.needsUpdate = true;
         }
 
+        // La geometría cambia con cada rostro: actualiza su volumen para evitar
+        // que Three.js oculte la máscara por un límite de encuadre desactualizado.
+        mesh.geometry.computeBoundingSphere();
+
         mesh.position.copy(this.pivot);
         mesh.quaternion.identity();
         mesh.scale.setScalar(1);
